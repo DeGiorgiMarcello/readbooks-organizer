@@ -48,7 +48,8 @@ if __name__ == "__main__":
         df["status"] = np.where(susp_mask,"suspended", "completed")
         df.loc[susp_mask,"rating"] = pd.NaT
         df["rating"] = df.rating.apply(lambda x: x.day)
-        df = df.astype({"status":"category"})
+        df.fillna(value={n: -1 for n in  ["rating","pages","month","year"]}, inplace=True)
+        df.category.fillna("None",inplace=True)
         df["year"] = int(sheet)
 
         dfs.append(df)
