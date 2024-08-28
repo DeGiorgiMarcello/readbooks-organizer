@@ -22,18 +22,18 @@ if __name__ == "__main__":
     }
 
     month_dict = {
-        "gennaio":1,
-        "febbraio":2,
-        "marzo":3,
-        "aprile":4,
-        "maggio":5,
-        "giugno":6,
-        "luglio":7,
-        "agosto":8,
-        "settembre":9,
-        "ottobre":10,
-        "novembre":11,
-        "dicembre":12,
+        "gennaio": 1,
+        "febbraio": 2,
+        "marzo": 3,
+        "aprile": 4,
+        "maggio": 5,
+        "giugno": 6,
+        "luglio": 7,
+        "agosto": 8,
+        "settembre": 9,
+        "ottobre": 10,
+        "novembre": 11,
+        "dicembre": 12,
     }
 
     for sheet in xlsx_file.sheet_names:
@@ -44,12 +44,14 @@ if __name__ == "__main__":
         df["month"] = df.month.map(month_dict)
         # rating wrongly converted to datetime
         df = df.dropna(how="all")
-        susp_mask = df.rating.isin(["sosp","sospeso"])
-        df["status"] = np.where(susp_mask,"suspended", "completed")
-        df.loc[susp_mask,"rating"] = pd.NaT
+        susp_mask = df.rating.isin(["sosp", "sospeso"])
+        df["status"] = np.where(susp_mask, "suspended", "completed")
+        df.loc[susp_mask, "rating"] = pd.NaT
         df["rating"] = df.rating.apply(lambda x: x.day)
-        df.fillna(value={n: -1 for n in  ["rating","pages","month","year"]}, inplace=True)
-        df.category.fillna("None",inplace=True)
+        df.fillna(
+            value={n: -1 for n in ["rating", "pages", "month", "year"]}, inplace=True
+        )
+        df.category.fillna("None", inplace=True)
         df["year"] = int(sheet)
 
         dfs.append(df)
@@ -70,4 +72,3 @@ if __name__ == "__main__":
             logging.info("Books pushed correctly to the database")
         else:
             logging.error("An error occurred while pushing the data")
-

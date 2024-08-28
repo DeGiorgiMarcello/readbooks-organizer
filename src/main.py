@@ -6,16 +6,15 @@ from routes import router
 
 logging.getLogger().setLevel(logging.INFO)
 
+
 @asynccontextmanager
-async def lifespan(app:FastAPI):
+async def lifespan(app: FastAPI):
     app.mongodb_client = get_mongo_client()
     app.mongodb_database = app.mongodb_client.get_database("readbooks")
     logging.info("Connected to MongoDB!")
     yield
     app.mongodb_client.close()
     logging.info("Connection to MongoDB closed.")
-
-
 
 
 app = FastAPI(lifespan=lifespan)
