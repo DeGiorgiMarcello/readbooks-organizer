@@ -25,7 +25,11 @@ def create_book(request: Request, book: Book = Body(...)):
 
 @router.get("/", response_description="List all read books", response_model=List[Book])
 def list_books(request: Request):
-    books = list(request.app.mongodb_database["books"].find(limit=100))
+    txt_query = {k: request.query_params.get(k) for k in ["title","author", "status","category"]}
+    num_query = {k: request.query_params.get(k) for k in ["month", "year", "rating", "pages"]}
+    query = {k:int(v) for k,v in num_query.items() if v}
+    query.update({k:v for k,v in txt_query.items() if v})
+    books = list(request.app.mongodb_database["books"].find(query, limit=100))
     return books
 
 
