@@ -1,11 +1,17 @@
 from fastapi import APIRouter, Body, Request, Response, HTTPException, status
 from fastapi.encoders import jsonable_encoder
-from typing import List
+from typing import List, Any
 from models import Book, BookUpdate
 from bson.objectid import ObjectId
 
 router = APIRouter()
 
+def query_to_dict(request: Request) ->dict[str, Any]:
+    txt_query = {k: request.query_params.get(k) for k in ["title","author", "status","category"]}
+    num_query = {k: request.query_params.get(k) for k in ["month", "year", "rating", "pages"]}
+    query = {k:int(v) for k,v in num_query.items() if v}
+    query.update({k:v for k,v in txt_query.items() if v})
+    return query
 
 @router.post(
     "/",
@@ -25,13 +31,13 @@ def create_book(request: Request, book: Book = Body(...)):
 
 @router.get("/", response_description="List all read books", response_model=List[Book])
 def list_books(request: Request):
-    txt_query = {k: request.query_params.get(k) for k in ["title","author", "status","category"]}
-    num_query = {k: request.query_params.get(k) for k in ["month", "year", "rating", "pages"]}
-    query = {k:int(v) for k,v in num_query.items() if v}
-    query.update({k:v for k,v in txt_query.items() if v})
+    query=query_to_dict(request)
     books = list(request.app.mongodb_database["books"].find(query, limit=100))
     return books
 
+@router.get("/categories",response_description="Return the available categories")
+def get_categories(request: Request):
+    return request.app.mongodb_database["books"].distinct("category")
 
 @router.get(
     "/{id}", response_description="Retrieve a single book by id", response_model=Book
@@ -80,10 +86,11 @@ def update_book(id: str, request: Request, book: BookUpdate = Body(...)):
         return existing_book
 
 
-@router.delete("/{id}", response_description="Delete a book by id")
-def delete_book(id: str, request: Request, response: Response):
-    delete_res = request.app.mongodb_database["books"].delete_one({"_id": ObjectId(id)})
-    if delete_res.deleted_count == 1:
+@router.delete("/", response_description="Delete books by query")
+def delete_book(query: dict[str, Any], request: Request, response: Response):
+
+    delete_res = request.app.mongodb_database["books"].delete_many(query)
+    if delete_res.deleted_count >= 1:
         response.status_code = (
             status.HTTP_204_NO_CONTENT
         )  # successful, no content to return
